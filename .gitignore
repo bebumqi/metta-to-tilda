@@ -1,5 +1,10 @@
-# Pycharm data
+# Pycharm
 .idea
+geckodriver.log
+
+# Results
+output
+tmp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
