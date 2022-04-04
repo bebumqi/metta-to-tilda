@@ -3,7 +3,7 @@ import logging
 import os
 import pathlib
 
-from modules import Reader, TildaCSVCreator, ImagesDownloader, LinksFinder
+from modules import Reader, TildaCSVCreator, ImagesDownloader, Scrapper
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(description='Скрипт, который па�
                                              'офисных кресел Samurai, и превращает их в удобоваримый .csv файл '
                                              'для импорта на сайт, построенный на конструкторе tilda')
 
-parser.add_argument('-l', '--links', action='store_true', help='Ищет ссылки на страницы товаров для последующей обработки')
+parser.add_argument('-s', '--scrap', action='store_true', help='Ищет ссылки на страницы товаров и скачивает их страницы для последующей обработки')
 parser.add_argument('-c', '--csv', action='store_true', help='Обрабатывает страницы в .csv для tilda')
 parser.add_argument('-i', '--download_images', action='store_true', help='Скачивает изображения товаров')
 
@@ -31,13 +31,13 @@ if __name__ == '__main__':
     os.makedirs(args.output, exist_ok=True)
 
     # Создание исходников файлов, если необходимо
-    if args.links:
-        LinksFinder.find_links(url=args.url, path=args.tmp)
+    if args.scrap:
+        links = Scrapper.scrap(url=args.url, path=args.tmp)
 
     # Создание .csv файла, если необходимо
     if args.csv or args.download_images:
         # Считывание исходников
-        products = Reader.get_products(links_path=args.tmp, processes=args.processes)
+        products = Reader.get_products(tmp_path=args.tmp, processes=args.processes)
 
         # Скачивание изображений товаров
         if args.download_images:

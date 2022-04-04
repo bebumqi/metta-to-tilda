@@ -1,70 +1,63 @@
 import logging
+import os
+from multiprocessing import Process, Queue
 from pathlib import Path
-from queue import Queue, Empty
-from threading import Thread
+from queue import Empty
 from typing import List
 
-import pandas as pd
-from selenium import webdriver
-from tqdm import tqdm
+from bs4 import BeautifulSoup
 
-from ..helpful import get_latest_file_in_folder
 from ..reader.product import Product
 
 
 class Reader:
     @staticmethod
-    def get_products(links_path: Path, processes: int) -> List[Product]:
-        logging.info('Считываю страницы...')
+    def get_products(tmp_path: Path, processes: int) -> List[Product]:
         products = []
+        logging.info('Считываю сохраненные страницы...')
 
-        try:
-            links_file_path = get_latest_file_in_folder(links_path, 'links*.csv')
-            df_links = pd.read_csv(filepath_or_buffer=links_file_path, sep=';')
-        except ValueError:
-            logging.error('Ошибка при получении файла со ссылками! [{}]'.format(links_path))
-            return products
+        scrap_path = os.path.join(tmp_path, 'scrap')
+        scrap_files = [os.path.join(scrap_path, f) for f in os.listdir(scrap_path) if '.html' in f]
 
-        logging.info(f'Список из [{len(df_links)}] ссылок на товары получен!')
+        logging.info(f'Найдено [{len(scrap_files)}] сохраненная страница!')
 
         # Создание очередей для получения результатов
-        q_links = Queue(maxsize=1)
+        q_scrap_file_paths = Queue(maxsize=1)
         q_products = Queue()
 
         # Создание потоков для обработки ссылок
-        logging.info(f'Создание [{processes}] потоков для обработки ссылок...')
+        logging.info(f'Создание [{processes}] потоков для обработки сохраненных страниц...')
         threads = []
         for i in range(processes):
-            threads.append(Thread(target=Reader._get_product_from_links_queue, args=(q_links, q_products)))
+            threads.append(Process(target=Reader._get_product_from_saved_page, args=(q_scrap_file_paths, q_products)))
             threads[i].start()
 
-        # Добавление ссылок в очередь
-        for row in tqdm(df_links.itertuples(index=False), desc='Считывание страниц', total=len(df_links)):
-            q_links.put(row)
+        for i, file_path in enumerate(scrap_files, 1):
+            logging.info(f'[{i}/{len(scrap_files)}] Считывание [{file_path}]')
+            q_scrap_file_paths.put(file_path)
 
-        for thread in threads:
-            thread.join()
+        # Получаю результаты считываний
+        while len(products) < len(scrap_files):
+            products.append(q_products.get())
+
+        logging.info('Считывание файлов завершено!')
+        return products
 
     @staticmethod
-    def _get_product_from_links_queue(q_links: Queue, q_products: Queue):
+    def _get_product_from_saved_page(q_scrap_file_paths: Queue, q_products: Queue):
         """
-        Функция для потока преобразования ссылки в продукт
-        :param q_links:
+        Функция для потока преобразования страницы в продукт
+        :param q_scrap_file_paths:
         :param q_products:
         :return:
         """
 
-        profile = webdriver.FirefoxProfile()
-        # profile.set_preference("permissions.default.image", 2)  # Запрет на загрузку изображений
-        browser = webdriver.Firefox(firefox_profile=profile)
-
-        while q_links.qsize():
+        while True:
             try:
-                product_name, product_link = tuple(q_links.get(timeout=10))
+                file_path = q_scrap_file_paths.get(timeout=5)
             except Empty:
                 break
 
-            browser.get(product_link)
-            product = Product.get_from_page(browser)
-
-        browser.quit()
+            with open(file_path, mode='r', encoding='utf-8') as file:
+                soup = BeautifulSoup(file.read(), features='html.parser')
+            q_products.put(Product.get_from_page(soup))
