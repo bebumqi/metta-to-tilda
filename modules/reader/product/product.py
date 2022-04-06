@@ -143,7 +143,7 @@ class Product:
         tilda_df = pd.DataFrame(
             data=rows,
             columns=['Brand', 'Mark', 'Category', 'Title', 'Description', 'Text', 'Photo', 'Price',
-                     'Price Old', 'Editions', 'Modifications', 'External ID', 'Parent External ID']
+                     'Price Old', 'Editions', 'Modifications', 'External ID', 'Parent External ID', 'Quantity']
         )
 
         return tilda_df

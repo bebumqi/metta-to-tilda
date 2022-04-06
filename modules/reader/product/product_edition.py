@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Sequence, List, TypedDict
+from typing import Sequence, List, Dict
 
 from ..photo import Photo
 from ..price import Price
 
 
-class ProductEditionPropertiesDict(TypedDict):
+class ProductEditionPropertiesDict(Dict):
     name: str
     value: str
 
