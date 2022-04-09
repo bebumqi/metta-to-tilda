@@ -13,6 +13,7 @@ CATEGORIES = {
     'Samurai T': re.compile(r'Samurai TV?\b'),
     'Samurai Comfort': re.compile(r'Comfort'),
     'Samurai (Модульные)': re.compile(r'Комплект\b'),
+    'Samurai (Другие)': re.compile(r'(Black Edition)|(Lux\b)|(TV?\b)|(Comfort\b)'),
     'Metta L': re.compile(r'Metta L\b'),
     'Metta B': re.compile(r'Metta B\b'),
     'Аксессуары': re.compile(r'Коврик-чехол'),

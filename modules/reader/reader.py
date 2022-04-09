@@ -41,6 +41,10 @@ class Reader:
             products.append(q_products.get())
 
         logging.info('Считывание файлов завершено!')
+
+        # Сортировка товаров
+        products = list(sorted(products, key=lambda x: x.name))
+
         return products
 
     @staticmethod
